@@ -1,0 +1,108 @@
+name: Full Test Pipeline # Display name in GitHub's Actions tab.
+
+on:
+  push:
+    branches: ["**"] # Run on pushes to any branch, including names containing "/".
+
+  pull_request:
+    branches: [main] # Run when a pull request targeting main is opened or updated.
+
+  workflow_dispatch: # Allow manual runs once this workflow exists on the default branch.
+
+permissions:
+  contents: read # Give the workflow permission to read the repository's code.
+
+jobs:
+  full-tests: # Our chosen identifier for this job.
+    runs-on: ubuntu-24.04 # Use a GitHub-hosted Ubuntu machine.
+    timeout-minutes: 15 # Stop the job if it takes longer than 15 minutes.
+
+    defaults:
+      run:
+        # GitHub enables pipefail with this shell, so failed tests still
+        # fail the step when their output is passed through tee.
+        shell: bash
+
+    env: # Settings made available to programs in every step of this job.
+      PYTHONUNBUFFERED: "1" # Show Python output promptly in the live logs.
+      COVERAGE_FILE: ci-results/coverage-data # Store raw coverage measurements here.
+
+    steps:
+      - name: Check out the code
+        # Copy the repository onto the runner.
+        # @v7 selects major version 7 of this reusable GitHub action.
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7 # Version of the Python setup action.
+        with:
+          python-version: "3.12.3" # Actual Python version; matches the WSL baseline.
+
+      - name: Install dependencies
+        run: |
+          # Use a fixed version of pip, the package installer.
+          python -m pip install --upgrade pip==26.2.2
+
+          # Install the recorded library versions and the project's packaging tool.
+          python -m pip install -r requirements-ci.txt pdm-backend==2.5.0
+
+          # Install this checkout of django-helpdesk:
+          # --no-build-isolation: use the packaging tool installed above.
+          # --no-deps: reuse the dependencies installed from requirements-ci.txt.
+          # -e: use this checkout's source files through an editable installation.
+          # .: the project is in the current directory.
+          python -m pip install --no-build-isolation --no-deps -e .
+
+          # Fail early if installed packages have incompatible dependencies.
+          python -m pip check
+
+      - name: Record the environment
+        run: |
+          # Create the directory that will hold our downloadable evidence.
+          mkdir -p ci-results
+
+          python --version > ci-results/python.txt # Save the Python version.
+          python -m pip freeze --all > ci-results/packages.txt # Save installed package versions.
+          git rev-parse HEAD > ci-results/commit.txt # Save the exact code revision tested.
+
+      - name: Run all tests and measure elapsed time
+        run: |
+          # /usr/bin/time measures the test command.
+          # -p writes real (elapsed), user, and sys timing fields.
+          # -o saves those timings in a separate file.
+          # coverage run executes quicktest.py while recording code coverage.
+          # The repository's existing configuration enables branch coverage.
+          # 2>&1 combines error output with normal output.
+          # tee displays the combined output and saves it to tests.log.
+          # The trailing backslashes continue this command onto the next line.
+          /usr/bin/time -p -o ci-results/timing.txt \
+            python -m coverage run quicktest.py \
+            2>&1 | tee ci-results/tests.log
+
+      - name: Generate coverage reports
+        # Continue after failed tests if coverage data was collected.
+        # !cancelled(): the workflow wasn't cancelled.
+        # &&: both conditions must be true.
+        # hashFiles(...) != '': a matching coverage data file exists.
+        if: ${{ !cancelled() && hashFiles('ci-results/coverage-data') != '' }}
+        run: |
+          # Read the raw measurements and save a readable text summary.
+          python -m coverage report > ci-results/coverage.txt
+
+          # Save structured results for later calculations and comparisons.
+          python -m coverage json -o ci-results/coverage.json
+
+          # Create browser-readable reports showing covered and uncovered code.
+          python -m coverage html -d ci-results/htmlcov
+
+      - name: Upload results
+        # Save available evidence even after tests fail.
+        # ** matches files throughout ci-results, including its subdirectories.
+        if: ${{ !cancelled() && hashFiles('ci-results/**') != '' }}
+        uses: actions/upload-artifact@v7 # Upload files as a downloadable artifact.
+        with:
+          # Include the run identifier and rerun attempt in the download's name.
+          name: full-test-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-results/ # Upload the logs, timing, environment, and coverage files.
+          retention-days: 90 # Request that GitHub retain the artifact for 90 days.
+          if-no-files-found: error # Treat missing evidence as an upload error.

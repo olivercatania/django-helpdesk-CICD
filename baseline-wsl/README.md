@@ -45,9 +45,6 @@ Keep `run-01` as the original snapshot and save future results in separate folde
 
 ## First CI run
 
-The inherited GitHub Actions workflow ran on 26 October 2026. All nine Python/Django jobs passed their formatting checks and tests.
-
 - [Pull request run](https://github.com/olivercatania/django-helpdesk-CICD/actions/runs/40388774400)
 - [Run on main after merging](https://github.com/olivercatania/django-helpdesk-CICD/actions/runs/40389632013)
 
-These runs record the CI baseline before changes to the workflow. The local WSL baseline remains in `run-01`.
