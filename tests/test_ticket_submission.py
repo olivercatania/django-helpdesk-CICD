@@ -98,6 +98,12 @@ class TicketBasicsTestCase(TestCase):
         self.assertEqual(email_count + 3, len(mail.outbox))
 
         ticket = Ticket.objects.last()
+
+        self.assertEqual(ticket.title, post_data["title"])
+        self.assertEqual(ticket.queue_id, post_data["queue"])
+        self.assertEqual(ticket.submitter_email, post_data["submitter_email"])
+        self.assertEqual(ticket.priority, post_data["priority"])
+
         self.assertEqual(ticket.followup_set.count(), 1)
         # Follow up is anonymous
         self.assertIsNone(ticket.followup_set.first().user)
@@ -164,10 +170,12 @@ class TicketBasicsTestCase(TestCase):
             "priority": 3,
         }
 
+        original_count = Ticket.objects.count()
         response = self.client.post(reverse("helpdesk:home"), post_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(email_count, len(mail.outbox))
         self.assertContains(response, "Select a valid choice.")
+        self.assertEqual(Ticket.objects.count(), original_count)
 
     def test_create_ticket_customfields(self):
         email_count = len(mail.outbox)

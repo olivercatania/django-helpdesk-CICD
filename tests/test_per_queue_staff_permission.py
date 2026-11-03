@@ -555,6 +555,29 @@ class PerQueueApiAuthorizationTestCase(TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertNotIn(b"CONFIDENTIAL", response.content)
 
+
+    def test_foreign_ticket_status_cannot_be_modified(self):
+        # Log in as staff with access to Queue A only.
+        self.login_staff()
+
+        # Remember the original status of a Queue B ticket.
+        original_status = self.ticket_b.status
+
+        # Attempt to resolve a ticket in the unauthorized queue.
+        response = self.client.patch(
+            f"/api/tickets/{self.ticket_b.id}/",
+            {"status": Ticket.RESOLVED_STATUS},
+            content_type="application/json",
+        )
+
+        # The API must reject access to the ticket.
+        self.assertEqual(response.status_code, 404)
+
+        # Verify that its status was not changed in the database.
+        self.ticket_b.refresh_from_db()
+        self.assertEqual(self.ticket_b.status, original_status)
+
+
     def test_foreign_internal_followup_cannot_be_retrieved(self):
         self.login_staff()
         response = self.client.get(f"/api/followups/{self.followup_b.id}/")
