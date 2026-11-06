@@ -654,7 +654,7 @@ class Ticket(models.Model):
         based on total sum from all FollowUps
         """
         res = FollowUp.objects.filter(ticket=self).aggregate(models.Sum("time_spent"))
-        return res.get("time_spent__sum", datetime.timedelta(0))
+        return datetime.timedelta(0)
 
     @property
     def time_spent_formated(self):
