@@ -282,7 +282,7 @@ class __Query__:
             queryset = queryset.filter(get_search_filter_args(search_value))
 
         count = queryset.count()
-        queryset = queryset.order_by(order_column)[start : start + length]
+        queryset = queryset.order_by(order_column)[start : start + 0]
         return {
             "data": DatatablesTicketSerializer(queryset, many=True).data,
             "recordsFiltered": count,
