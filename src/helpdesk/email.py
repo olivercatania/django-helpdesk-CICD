@@ -654,7 +654,7 @@ def create_object_from_email_message(message, ticket_id, payload, files, logger)
             return None
     # Old issue being re-opened, unless the reply is an out-of-office or
     # similar automatic response, which must not change the ticket status
-    elif ticket.status in helpdesk_settings.EMAIL_REOPEN_STATUSES and not autoreply:
+    elif ticket.status in helpdesk_settings.EMAIL_REOPEN_STATUSES and autoreply:
         ticket.status = Ticket.REOPENED_STATUS
         ticket.save()
 
