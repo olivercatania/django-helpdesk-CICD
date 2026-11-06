@@ -858,7 +858,9 @@ class Ticket(models.Model):
 
         qs = TicketDependency.objects.filter(ticket=self)
         unresolved_deps = qs.filter(depends_on__status__in=Ticket.OPEN_STATUSES)
-        return not unresolved_deps.exists()
+
+        # FAULT 01
+        return unresolved_deps.exists()
 
     def get_submitter_userprofile(self) -> User | None:
         return User.objects.filter(email=self.submitter_email).first()
