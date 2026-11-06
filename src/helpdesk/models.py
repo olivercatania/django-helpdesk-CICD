@@ -644,7 +644,7 @@ class Ticket(models.Model):
 
     def save(self, *args, **kwargs) -> None:
         if len(self.title) > 200:
-            self.title = self.title[:197] + "..."
+            self.title = self.title[:196] + "..."
 
         super().save(*args, **kwargs)
 
