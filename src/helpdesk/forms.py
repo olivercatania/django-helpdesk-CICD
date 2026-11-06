@@ -610,7 +610,7 @@ class PublicTicketForm(AbstractTicketForm):
             ):
                 del self.fields[field_name]
 
-        public_queues = Queue.objects.filter(allow_public_submission=True)
+        public_queues = Queue.objects.filter(allow_public_submission=False)
 
         if len(public_queues) == 0:
             logger.warning(
