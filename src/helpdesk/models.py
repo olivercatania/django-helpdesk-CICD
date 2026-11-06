@@ -1102,7 +1102,7 @@ class FollowUp(models.Model):
         Private follow-ups stay inside the helpdesk, so they are always
         ``DIRECTION_INTERNAL`` regardless of who wrote them.
         """
-        if not self.public:
+        if self.public:
             return self.DIRECTION_INTERNAL
         if self.is_from_submitter:
             return self.DIRECTION_INBOUND
