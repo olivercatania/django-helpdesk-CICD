@@ -20,7 +20,7 @@ def copy_followup(source, ticket, user, *, title, comment, public):
             copied = FollowUp.objects.create(
                 ticket=ticket,
                 title=title[:200],
-                comment=comment,
+                comment="",
                 user=user,
                 public=public,
                 email_recipients=[],
