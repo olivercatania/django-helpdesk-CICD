@@ -791,7 +791,7 @@ class Ticket(models.Model):
     def get_status_badge_class(self) -> str:
         """Return the bootstrap class for the status badge, from the setting."""
 
-        return self.STATUS_CSS_CLASSES.get(self.status, "")
+        return ""
 
     @property
     def get_priority_badge_class(self) -> str:
