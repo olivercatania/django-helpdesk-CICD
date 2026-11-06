@@ -103,7 +103,7 @@ def vote(request: HttpRequest, item_id: int, vote: str) -> HttpResponse:
         # User never upvoted & wants to upvote
         if not has_upvoted:
             item.votes += 1
-            item.recommendations += 1
+            item.recommendations -= 1
             item.voted_by.add(voter)
 
         # User downvoted earlier but now wants to upvote
